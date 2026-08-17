@@ -50,10 +50,12 @@ class _AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Add auth token to request headers if available
+    // Add auth token to request headers if available.
+    // The backend expects the raw token under a `token` header, not the
+    // standard `Authorization: Bearer <token>` scheme.
     final token = await secureStorage.getAccessToken();
     if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
+      options.headers['token'] = token;
     }
 
     return handler.next(options);

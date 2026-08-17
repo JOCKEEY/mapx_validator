@@ -20,6 +20,13 @@ abstract class ValidationRepository {
     required String parcelId,
   });
 
+  /// Get the most recently saved local validation for a parcel (including
+  /// its saved photo paths), or null if none exists. Used to restore an
+  /// in-progress visit that hasn't been sent yet.
+  Future<Either<Failure, ValidationEntity?>> getLatestValidationForParcel({
+    required String parcelId,
+  });
+
   /// Get pending validations (not yet synced)
   Future<Either<Failure, List<ValidationEntity>>> getPendingValidations();
 
@@ -38,4 +45,9 @@ abstract class ValidationRepository {
   Future<Either<Failure, void>> uploadValidation({
     required String validationId,
   });
+
+  /// Attempt to upload every locally pending validation (e.g. once
+  /// connectivity is restored). Individual failures are swallowed so one
+  /// bad record doesn't block the rest. Returns how many succeeded.
+  Future<int> syncPendingValidations();
 }

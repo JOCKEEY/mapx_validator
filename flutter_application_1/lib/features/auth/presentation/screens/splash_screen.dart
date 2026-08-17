@@ -46,18 +46,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // App Logo
-            Container(
-              width: 80,
+            Image.asset(
+              'assets/images/mapx_logo.png',
               height: 80,
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.map,
-                size: 48,
-                color: Colors.white,
-              ),
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 24),
             Text(

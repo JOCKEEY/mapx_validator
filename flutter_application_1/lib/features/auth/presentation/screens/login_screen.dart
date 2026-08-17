@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 
 /// Production-ready login screen for user authentication
 /// Matches design requirements for iOS and Android
@@ -40,8 +41,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// Handle login action
   Future<void> _handleLogin() async {
-    // Temporary: Auto-navigate to dashboard without validation
-    context.go('/home');
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your email and password.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    final success = await ref.read(authStateProvider.notifier).login(
+          emailAddress: email,
+          password: password,
+          rememberMe: _rememberMe,
+        );
+
+    if (!mounted) return;
+
+    if (success) {
+      context.go('/home');
+    } else {
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            ref.read(authStateProvider).errorMessage ?? 'Login failed.';
+      });
+    }
   }
 
   @override

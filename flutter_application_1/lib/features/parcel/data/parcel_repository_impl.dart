@@ -1,5 +1,7 @@
-import 'package:fpdart/fpdart.dart';
+import 'dart:convert';
+
 import 'package:drift/drift.dart' as drift;
+import 'package:fpdart/fpdart.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/errors/failures.dart';
@@ -18,184 +20,62 @@ class ParcelRepositoryImpl implements ParcelRepository {
   });
 
   @override
-  Future<Either<Failure, List<ParcelSearchResult>>> searchParcels({
-    required String query,
-  }) async {
+  Future<Either<Failure, List<LandParcel>>> searchLand(String query) async {
     try {
-      // Try local database first
-      final localParcels = await database.searchParcels(query);
-      if (localParcels.isNotEmpty) {
-        return Right(
-          localParcels
-              .map((p) => ParcelSearchResult(
-                    id: p.id,
-                    pin: p.pin,
-                    tdNumber: p.tdNumber,
-                    ownerName: p.ownerName,
-                  ))
-              .toList(),
-        );
-      }
-
-      // Fallback to API if nothing in cache
-      final results = await apiService.searchParcels(query);
-
-      // Cache results in database
-      for (final result in results) {
-        await database.upsertParcel(
-          ParcelsCompanion(
-            id: drift.Value(result.id),
-            pin: drift.Value(result.pin),
-            tdNumber: drift.Value(result.tdNumber),
-            ownerName: drift.Value(result.ownerName),
-            updatedAt: drift.Value(DateTime.now()),
-          ),
-        );
-      }
-
+      final results = await apiService.searchLand(query);
       return Right(results);
     } on Exception catch (e) {
-      return Left(NetworkFailure('Failed to search parcels: ${e.toString()}'));
+      return Left(NetworkFailure(_messageOf(e)));
     }
   }
 
   @override
-  Future<Either<Failure, ParcelEntity>> getParcelById({
-    required String parcelId,
-  }) async {
+  Future<Either<Failure, void>> addToQueue(LandParcel parcel) async {
     try {
-      // Try local database first
-      final localParcel = await database.getParcelById(parcelId);
-      if (localParcel != null) {
-        return Right(
-          ParcelEntity(
-            id: localParcel.id,
-            pin: localParcel.pin,
-            tdNumber: localParcel.tdNumber,
-            ownerName: localParcel.ownerName,
-            classification: localParcel.classification,
-            barangay: localParcel.barangay,
-            municipality: localParcel.municipality,
-            area: localParcel.area,
-            geometryJson: localParcel.geometryJson,
-            centroidLat: localParcel.centroidLat,
-            centroidLng: localParcel.centroidLng,
-          ),
-        );
-      }
-
-      // Fetch from API
-      final dto = await apiService.getParcelDetails(parcelId);
-      final entity = ParcelEntity.fromDto(dto);
-
-      // Cache in database
-      await database.upsertParcel(
-        ParcelsCompanion(
-          id: drift.Value(entity.id),
-          pin: drift.Value(entity.pin),
-          tdNumber: drift.Value(entity.tdNumber),
-          ownerName: drift.Value(entity.ownerName),
-          classification: drift.Value(entity.classification),
-          barangay: drift.Value(entity.barangay),
-          municipality: drift.Value(entity.municipality),
-          area: drift.Value(entity.area),
-          geometryJson: drift.Value(entity.geometryJson),
-          centroidLat: drift.Value(entity.centroidLat),
-          centroidLng: drift.Value(entity.centroidLng),
-          updatedAt: drift.Value(DateTime.now()),
-        ),
-      );
-
-      return Right(entity);
-    } on Exception catch (e) {
-      return Left(NetworkFailure('Failed to get parcel details: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, List<ParcelEntity>>> getCachedParcels() async {
-    try {
-      final parcels = await database.getAllParcels();
-      return Right(
-        parcels
-            .map((p) => ParcelEntity(
-                  id: p.id,
-                  pin: p.pin,
-                  tdNumber: p.tdNumber,
-                  ownerName: p.ownerName,
-                  classification: p.classification,
-                  barangay: p.barangay,
-                  municipality: p.municipality,
-                  area: p.area,
-                  geometryJson: p.geometryJson,
-                  centroidLat: p.centroidLat,
-                  centroidLng: p.centroidLng,
-                ))
-            .toList(),
-      );
-    } on Exception catch (e) {
-      return Left(CacheFailure('Failed to get cached parcels: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> downloadParcelsForBarangay({
-    required String barangayId,
-  }) async {
-    try {
-      final dtos = await apiService.downloadParcelsForBarangay(barangayId);
-
-      // Store in database
-      for (final dto in dtos) {
-        await database.upsertParcel(
-          ParcelsCompanion(
-            id: drift.Value(dto.id),
-            pin: drift.Value(dto.pin),
-            tdNumber: drift.Value(dto.tdNumber),
-            ownerName: drift.Value(dto.ownerName),
-            classification: drift.Value(dto.classification),
-            barangay: drift.Value(dto.barangay),
-            municipality: drift.Value(dto.municipality),
-            area: drift.Value(dto.area),
-            geometryJson: drift.Value(dto.geometryJson),
-            centroidLat: drift.Value(dto.centroidLat),
-            centroidLng: drift.Value(dto.centroidLng),
-            downloadedAt: drift.Value(DateTime.now()),
-            updatedAt: drift.Value(DateTime.now()),
-          ),
-        );
-      }
-
-      return const Right(null);
-    } on Exception catch (e) {
-      return Left(NetworkFailure('Failed to download parcels: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> cacheParcel({
-    required ParcelEntity parcel,
-  }) async {
-    try {
-      await database.upsertParcel(
-        ParcelsCompanion(
+      await database.upsertRpuQueueItem(
+        RpuQueueItemsCompanion(
           id: drift.Value(parcel.id),
           pin: drift.Value(parcel.pin),
           tdNumber: drift.Value(parcel.tdNumber),
-          ownerName: drift.Value(parcel.ownerName),
-          classification: drift.Value(parcel.classification),
-          barangay: drift.Value(parcel.barangay),
+          owner: drift.Value(parcel.owner),
           municipality: drift.Value(parcel.municipality),
-          area: drift.Value(parcel.area),
-          geometryJson: drift.Value(parcel.geometryJson),
-          centroidLat: drift.Value(parcel.centroidLat),
-          centroidLng: drift.Value(parcel.centroidLng),
-          updatedAt: drift.Value(DateTime.now()),
+          barangay: drift.Value(parcel.barangay),
+          landClass: drift.Value(parcel.landClass),
+          payloadJson: drift.Value(jsonEncode(parcel.toJson())),
+          addedAt: drift.Value(DateTime.now()),
         ),
       );
       return const Right(null);
     } on Exception catch (e) {
-      return Left(CacheFailure('Failed to cache parcel: ${e.toString()}'));
+      return Left(CacheFailure(_messageOf(e)));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> removeFromQueue(String parcelId) async {
+    try {
+      await database.deleteRpuQueueItem(parcelId);
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(CacheFailure(_messageOf(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<LandParcel>>> getQueuedParcels() async {
+    try {
+      final rows = await database.getRpuQueueItems();
+      final parcels = rows
+          .map((row) =>
+              LandParcel.fromJson(jsonDecode(row.payloadJson) as Map<String, dynamic>))
+          .toList();
+      return Right(parcels);
+    } on Exception catch (e) {
+      return Left(CacheFailure(_messageOf(e)));
+    }
+  }
+
+  /// Strips the `Exception: ` prefix Dart adds to `Exception(message).toString()`
+  String _messageOf(Exception e) =>
+      e.toString().replaceFirst('Exception: ', '');
 }

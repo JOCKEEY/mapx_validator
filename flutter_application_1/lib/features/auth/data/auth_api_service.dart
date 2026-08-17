@@ -11,26 +11,29 @@ class AuthApiService {
 
   /// Call login endpoint
   Future<LoginResponseDto> login({
-    required String username,
+    required String emailAddress,
     required String password,
+    bool rememberMe = false,
   }) async {
+    late final Response response;
     try {
-      final response = await dio.post(
+      response = await dio.post(
         ApiConstants.loginEndpoint,
         data: {
-          'username': username,
+          'emailAddress': emailAddress,
           'password': password,
+          'rememberMe': rememberMe,
         },
       );
-
-      if (response.statusCode == 200) {
-        return LoginResponseDto.fromJson(response.data);
-      } else {
-        throw Exception('Login failed with status ${response.statusCode}');
-      }
     } on DioException catch (e) {
       throw Exception('Login request failed: ${e.message}');
     }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return LoginResponseDto.fromJson(response.data as Map<String, dynamic>);
+    }
+
+    throw Exception(_extractErrorMessage(response));
   }
 
   /// Call logout endpoint
@@ -42,23 +45,38 @@ class AuthApiService {
     }
   }
 
-  /// Call refresh token endpoint
-  Future<String> refreshToken(String currentRefreshToken) async {
+  /// Call change-password endpoint
+  Future<void> updatePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    late final Response response;
     try {
-      final response = await dio.post(
-        ApiConstants.refreshTokenEndpoint,
+      response = await dio.post(
+        ApiConstants.updatePasswordEndpoint,
         data: {
-          'refresh_token': currentRefreshToken,
+          'password': newPassword,
+          'oldpassword': oldPassword,
         },
       );
-
-      if (response.statusCode == 200) {
-        return response.data['access_token'] as String;
-      } else {
-        throw Exception('Refresh token failed with status ${response.statusCode}');
-      }
     } on DioException catch (e) {
-      throw Exception('Refresh token request failed: ${e.message}');
+      throw Exception('Change password request failed: ${e.message}');
     }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return;
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  /// Extract a human-readable error message from a failed response
+  String _extractErrorMessage(Response response) {
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      final message = data['message'] ?? data['error'] ?? data['error_description'];
+      if (message != null) return message.toString();
+    }
+    return 'Login failed with status ${response.statusCode}';
   }
 }

@@ -21,6 +21,22 @@ class ValidationRepositoryImpl implements ValidationRepository {
     required this.syncQueueManager,
   });
 
+  ValidationEntity _entityFrom(Validation validation, List<ValidationPhoto> photos) {
+    return ValidationEntity(
+      id: validation.id,
+      parcelId: validation.parcelId,
+      tdNumber: validation.tdNumber,
+      status: validation.status,
+      remarks: validation.remarks,
+      latitude: validation.latitude,
+      longitude: validation.longitude,
+      createdAt: validation.createdAt,
+      syncStatus: validation.syncStatus,
+      photoIds: photos.map((p) => p.id).toList(),
+      photoPaths: photos.map((p) => p.localPath).toList(),
+    );
+  }
+
   @override
   Future<Either<Failure, ValidationEntity>> createValidation({
     required CreateValidationRequest request,
@@ -28,67 +44,48 @@ class ValidationRepositoryImpl implements ValidationRepository {
     try {
       const uuid = Uuid();
       final validationId = uuid.v4();
-
-      // Create validation entity
-      final validation = Validation(
-        id: validationId,
-        parcelId: request.parcelId,
-        status: request.status,
-        remarks: request.remarks,
-        latitude: request.latitude,
-        longitude: request.longitude,
-        syncStatus: 'pending',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        syncedAt: null,
-        retryCount: 0,
-      );
+      final now = DateTime.now();
 
       // Save to database
       await database.insertValidation(
         ValidationsCompanion(
-          id: Value(validation.id),
-          parcelId: Value(validation.parcelId),
-          status: Value(validation.status),
-          remarks: Value(validation.remarks),
-          latitude: Value(validation.latitude),
-          longitude: Value(validation.longitude),
-          syncStatus: Value(validation.syncStatus),
-          createdAt: Value(validation.createdAt),
-          updatedAt: Value(validation.updatedAt),
-          retryCount: Value(validation.retryCount),
+          id: Value(validationId),
+          parcelId: Value(request.parcelId),
+          tdNumber: Value(request.tdNumber),
+          status: Value(request.status),
+          remarks: Value(request.remarks),
+          latitude: Value(request.latitude),
+          longitude: Value(request.longitude),
+          syncStatus: const Value('pending'),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+          retryCount: const Value(0),
         ),
       );
 
-      // Add to sync queue
+      // Track in the generic sync queue too, for future sync-status tooling
       await syncQueueManager.addToQueue(
         entityType: 'validation',
         entityId: validationId,
         operation: 'create',
-        payload: {
-          'parcel_id': request.parcelId,
-          'status': request.status,
-          'remarks': request.remarks,
-          'latitude': request.latitude,
-          'longitude': request.longitude,
-        },
+        payload: request.toJson(),
       );
 
-      // Return entity
       return Right(
         ValidationEntity(
           id: validationId,
           parcelId: request.parcelId,
+          tdNumber: request.tdNumber,
           status: request.status,
           remarks: request.remarks,
           latitude: request.latitude,
           longitude: request.longitude,
-          createdAt: DateTime.now(),
+          createdAt: now,
           photoIds: [],
         ),
       );
     } on Exception catch (e) {
-      return Left(ValidationFailure('Failed to create validation: ${e.toString()}'));
+      return Left(ValidationFailure(_messageOf(e)));
     }
   }
 
@@ -102,23 +99,10 @@ class ValidationRepositoryImpl implements ValidationRepository {
         return Left(ValidationFailure('Validation not found'));
       }
 
-      // Get associated photos
       final photos = await database.getPhotosByValidationId(validationId);
-
-      return Right(
-        ValidationEntity(
-          id: validation.id,
-          parcelId: validation.parcelId,
-          status: validation.status,
-          remarks: validation.remarks,
-          latitude: validation.latitude,
-          longitude: validation.longitude,
-          createdAt: validation.createdAt,
-          photoIds: photos.map((p) => p.id).toList(),
-        ),
-      );
+      return Right(_entityFrom(validation, photos));
     } on Exception catch (e) {
-      return Left(ValidationFailure('Failed to get validation: ${e.toString()}'));
+      return Left(ValidationFailure(_messageOf(e)));
     }
   }
 
@@ -127,62 +111,51 @@ class ValidationRepositoryImpl implements ValidationRepository {
     required String parcelId,
   }) async {
     try {
-      final validations =
-          await database.getValidationsByParcelId(parcelId);
+      final validations = await database.getValidationsByParcelId(parcelId);
 
       final entities = <ValidationEntity>[];
       for (final validation in validations) {
-        final photos =
-            await database.getPhotosByValidationId(validation.id);
-        entities.add(
-          ValidationEntity(
-            id: validation.id,
-            parcelId: validation.parcelId,
-            status: validation.status,
-            remarks: validation.remarks,
-            latitude: validation.latitude,
-            longitude: validation.longitude,
-            createdAt: validation.createdAt,
-            photoIds: photos.map((p) => p.id).toList(),
-          ),
-        );
+        final photos = await database.getPhotosByValidationId(validation.id);
+        entities.add(_entityFrom(validation, photos));
       }
 
       return Right(entities);
     } on Exception catch (e) {
-      return Left(ValidationFailure(
-          'Failed to get validations: ${e.toString()}'));
+      return Left(ValidationFailure(_messageOf(e)));
     }
   }
 
   @override
-  Future<Either<Failure, List<ValidationEntity>>>
-      getPendingValidations() async {
+  Future<Either<Failure, ValidationEntity?>> getLatestValidationForParcel({
+    required String parcelId,
+  }) async {
+    try {
+      final validations = await database.getValidationsByParcelId(parcelId);
+      if (validations.isEmpty) return const Right(null);
+
+      // Already ordered most-recent-first by the DAO
+      final latest = validations.first;
+      final photos = await database.getPhotosByValidationId(latest.id);
+      return Right(_entityFrom(latest, photos));
+    } on Exception catch (e) {
+      return Left(ValidationFailure(_messageOf(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ValidationEntity>>> getPendingValidations() async {
     try {
       final validations = await database.getPendingValidations();
 
       final entities = <ValidationEntity>[];
       for (final validation in validations) {
-        final photos =
-            await database.getPhotosByValidationId(validation.id);
-        entities.add(
-          ValidationEntity(
-            id: validation.id,
-            parcelId: validation.parcelId,
-            status: validation.status,
-            remarks: validation.remarks,
-            latitude: validation.latitude,
-            longitude: validation.longitude,
-            createdAt: validation.createdAt,
-            photoIds: photos.map((p) => p.id).toList(),
-          ),
-        );
+        final photos = await database.getPhotosByValidationId(validation.id);
+        entities.add(_entityFrom(validation, photos));
       }
 
       return Right(entities);
     } on Exception catch (e) {
-      return Left(ValidationFailure(
-          'Failed to get pending validations: ${e.toString()}'));
+      return Left(ValidationFailure(_messageOf(e)));
     }
   }
 
@@ -195,6 +168,7 @@ class ValidationRepositoryImpl implements ValidationRepository {
         ValidationsCompanion(
           id: Value(validation.id),
           parcelId: Value(validation.parcelId),
+          tdNumber: Value(validation.tdNumber),
           status: Value(validation.status),
           remarks: Value(validation.remarks),
           latitude: Value(validation.latitude),
@@ -205,7 +179,7 @@ class ValidationRepositoryImpl implements ValidationRepository {
 
       return const Right(null);
     } on Exception catch (e) {
-      return Left(ValidationFailure('Failed to update validation: ${e.toString()}'));
+      return Left(ValidationFailure(_messageOf(e)));
     }
   }
 
@@ -224,25 +198,14 @@ class ValidationRepositoryImpl implements ValidationRepository {
           validationId: Value(validationId),
           localPath: Value(localPath),
           fileName: Value(localPath.split('/').last),
-          syncStatus: Value('pending'),
+          syncStatus: const Value('pending'),
           createdAt: Value(DateTime.now()),
         ),
       );
 
-      // Add to sync queue
-      await syncQueueManager.addToQueue(
-        entityType: 'photo',
-        entityId: photoId,
-        operation: 'create',
-        payload: {
-          'validation_id': validationId,
-          'local_path': localPath,
-        },
-      );
-
       return const Right(null);
     } on Exception catch (e) {
-      return Left(ValidationFailure('Failed to add photo: ${e.toString()}'));
+      return Left(ValidationFailure(_messageOf(e)));
     }
   }
 
@@ -256,38 +219,45 @@ class ValidationRepositoryImpl implements ValidationRepository {
         return Left(ValidationFailure('Validation not found'));
       }
 
-      // Get photos
-      final photos =
-          await database.getPhotosByValidationId(validationId);
-      final photoPaths = photos
-          .map((p) => p.localPath)
-          .toList();
+      final photos = await database.getPhotosByValidationId(validationId);
+      final photoPaths = photos.map((p) => p.localPath).toList();
 
-      // Create request and upload
-      final request = CreateValidationRequest(
-        parcelId: validation.parcelId,
-        status: validation.status,
-        remarks: validation.remarks,
-        latitude: validation.latitude,
-        longitude: validation.longitude,
-      );
-
-      await apiService.uploadValidation(
-        validation: request,
+      await apiService.createRpuLandValidation(
+        validation: CreateValidationRequest(
+          parcelId: validation.parcelId,
+          tdNumber: validation.tdNumber,
+          status: validation.status,
+          remarks: validation.remarks,
+          latitude: validation.latitude,
+          longitude: validation.longitude,
+          surveyDate: validation.createdAt,
+        ),
         photoPaths: photoPaths.isNotEmpty ? photoPaths : null,
       );
 
-      // Mark as synced
-      await database.updateValidationSyncStatus(validationId, 'synced');
-
-      // Mark photos as synced
+      await database.markValidationSynced(validationId);
       for (final photo in photos) {
         await database.updatePhotoSyncStatus(photo.id, 'synced');
       }
 
       return const Right(null);
     } on Exception catch (e) {
-      return Left(SyncFailure('Failed to upload validation: ${e.toString()}'));
+      return Left(SyncFailure(_messageOf(e)));
     }
   }
+
+  @override
+  Future<int> syncPendingValidations() async {
+    final pending = await database.getPendingValidations();
+
+    var succeeded = 0;
+    for (final validation in pending) {
+      final result = await uploadValidation(validationId: validation.id);
+      if (result.isRight()) succeeded++;
+    }
+    return succeeded;
+  }
+
+  /// Strips the `Exception: ` prefix Dart adds to `Exception(message).toString()`
+  String _messageOf(Exception e) => e.toString().replaceFirst('Exception: ', '');
 }

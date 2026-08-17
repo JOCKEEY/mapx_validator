@@ -6,7 +6,7 @@ import '../widgets/auth_widgets.dart';
 
 /// Password recovery screen
 class PasswordRecoveryScreen extends StatefulWidget {
-  const PasswordRecoveryScreen({Key? key}) : super(key: key);
+  const PasswordRecoveryScreen({super.key});
 
   @override
   State<PasswordRecoveryScreen> createState() => _PasswordRecoveryScreenState();
@@ -153,7 +153,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: AppTheme.successColor.withOpacity(0.2),
+            color: AppTheme.successColor.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(

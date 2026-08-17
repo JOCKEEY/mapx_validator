@@ -16,7 +16,7 @@ class AuthTextField extends StatefulWidget {
   final bool enabled;
 
   const AuthTextField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.label,
     required this.hintText,
@@ -27,7 +27,7 @@ class AuthTextField extends StatefulWidget {
     this.validator,
     this.onToggleObscure,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   State<AuthTextField> createState() => _AuthTextFieldState();
@@ -98,16 +98,16 @@ class ErrorMessageWidget extends StatelessWidget {
   final String message;
 
   const ErrorMessageWidget({
-    Key? key,
+    super.key,
     required this.message,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.errorColor.withOpacity(0.1),
+        color: AppTheme.errorColor.withValues(alpha: 0.1),
         border: Border.all(color: AppTheme.errorColor),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -140,16 +140,16 @@ class SuccessMessageWidget extends StatelessWidget {
   final String message;
 
   const SuccessMessageWidget({
-    Key? key,
+    super.key,
     required this.message,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.successColor.withOpacity(0.1),
+        color: AppTheme.successColor.withValues(alpha: 0.1),
         border: Border.all(color: AppTheme.successColor),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -185,12 +185,12 @@ class LoadingButton extends StatelessWidget {
   final Color? backgroundColor;
 
   const LoadingButton({
-    Key? key,
+    super.key,
     required this.isLoading,
     required this.onPressed,
     required this.label,
     this.backgroundColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +211,7 @@ class LoadingButton extends StatelessWidget {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.white.withOpacity(0.8),
+                  Colors.white.withValues(alpha: 0.8),
                 ),
               ),
             )
@@ -233,11 +233,11 @@ class TabSelector extends StatelessWidget {
   final ValueChanged<int> onTabChanged;
 
   const TabSelector({
-    Key? key,
+    super.key,
     required this.selectedIndex,
     required this.tabs,
     required this.onTabChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -287,10 +287,10 @@ class DemoCredentialsCard extends StatelessWidget {
   final String password;
 
   const DemoCredentialsCard({
-    Key? key,
+    super.key,
     required this.username,
     required this.password,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -337,9 +337,9 @@ class DividerWithText extends StatelessWidget {
   final String text;
 
   const DividerWithText({
-    Key? key,
+    super.key,
     required this.text,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -372,10 +372,10 @@ class PasswordRequirement extends StatelessWidget {
   final bool isMet;
 
   const PasswordRequirement({
-    Key? key,
+    super.key,
     required this.text,
     required this.isMet,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -405,10 +405,10 @@ class BiometricLoginButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const BiometricLoginButton({
-    Key? key,
+    super.key,
     required this.isLoading,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

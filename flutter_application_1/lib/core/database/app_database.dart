@@ -10,13 +10,33 @@ import 'schema.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Parcels, Validations, ValidationPhotos, SyncQueues, UserSessions],
+  tables: [
+    Parcels,
+    Validations,
+    ValidationPhotos,
+    SyncQueues,
+    UserSessions,
+    RpuQueueItems,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(rpuQueueItems);
+      }
+      if (from < 3) {
+        await m.addColumn(validations, validations.tdNumber);
+      }
+    },
+  );
 
   // ===== PARCEL DAOS =====
 
@@ -27,17 +47,18 @@ class AppDatabase extends _$AppDatabase {
 
   /// Get parcel by ID
   Future<Parcel?> getParcelById(String id) async {
-    return (select(parcels)..where((tbl) => tbl.id.equals(id)))
-        .getSingleOrNull();
+    return (select(
+      parcels,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
   /// Search parcels by PIN or TD Number
   Future<List<Parcel>> searchParcels(String query) async {
     final lowerQuery = '%${query.toLowerCase()}%';
     return (select(parcels)
-          ..where((tbl) =>
-              tbl.pin.like(lowerQuery) |
-              tbl.tdNumber.like(lowerQuery))
+          ..where(
+            (tbl) => tbl.pin.like(lowerQuery) | tbl.tdNumber.like(lowerQuery),
+          )
           ..limit(20))
         .get();
   }
@@ -71,15 +92,21 @@ class AppDatabase extends _$AppDatabase {
 
   /// Get validation by ID
   Future<Validation?> getValidationById(String id) async {
-    return (select(validations)..where((tbl) => tbl.id.equals(id)))
-        .getSingleOrNull();
+    return (select(
+      validations,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
   /// Get all validations for a parcel
   Future<List<Validation>> getValidationsByParcelId(String parcelId) {
     return (select(validations)
           ..where((tbl) => tbl.parcelId.equals(parcelId))
-          ..orderBy([(tbl) => OrderingTerm(expression: tbl.createdAt, mode: OrderingMode.desc)]))
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.createdAt,
+              mode: OrderingMode.desc,
+            ),
+          ]))
         .get();
   }
 
@@ -91,11 +118,25 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  /// Live-updating list of all locally saved validations, most recent first
+  Stream<List<Validation>> watchValidations() {
+    return (select(validations)..orderBy([
+          (tbl) =>
+              OrderingTerm(expression: tbl.createdAt, mode: OrderingMode.desc),
+        ]))
+        .watch();
+  }
+
   /// Get failed validations
   Future<List<Validation>> getFailedValidations() {
     return (select(validations)
           ..where((tbl) => tbl.syncStatus.equals('failed'))
-          ..orderBy([(tbl) => OrderingTerm(expression: tbl.retryCount, mode: OrderingMode.desc)]))
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.retryCount,
+              mode: OrderingMode.desc,
+            ),
+          ]))
         .get();
   }
 
@@ -104,11 +145,29 @@ class AppDatabase extends _$AppDatabase {
     String validationId,
     String syncStatus,
   ) async {
-    final result = await (update(validations)..where((tbl) => tbl.id.equals(validationId)))
-        .write(
+    final result =
+        await (update(
+          validations,
+        )..where((tbl) => tbl.id.equals(validationId))).write(
           ValidationsCompanion(
             syncStatus: Value(syncStatus),
             updatedAt: Value(DateTime.now()),
+          ),
+        );
+    return result > 0;
+  }
+
+  /// Mark a validation as successfully sent, recording exactly when
+  Future<bool> markValidationSynced(String validationId) async {
+    final now = DateTime.now();
+    final result =
+        await (update(
+          validations,
+        )..where((tbl) => tbl.id.equals(validationId))).write(
+          ValidationsCompanion(
+            syncStatus: const Value('synced'),
+            syncedAt: Value(now),
+            updatedAt: Value(now),
           ),
         );
     return result > 0;
@@ -120,7 +179,9 @@ class AppDatabase extends _$AppDatabase {
     if (validation == null) return false;
 
     return updateValidation(
-      validation.toCompanion(false).copyWith(
+      validation
+          .toCompanion(false)
+          .copyWith(
             retryCount: Value(validation.retryCount + 1),
             updatedAt: Value(DateTime.now()),
           ),
@@ -157,8 +218,10 @@ class AppDatabase extends _$AppDatabase {
 
   /// Update photo sync status
   Future<bool> updatePhotoSyncStatus(String photoId, String syncStatus) async {
-    final result = await (update(validationPhotos)..where((tbl) => tbl.id.equals(photoId)))
-        .write(
+    final result =
+        await (update(
+          validationPhotos,
+        )..where((tbl) => tbl.id.equals(photoId))).write(
           ValidationPhotosCompanion(
             syncStatus: Value(syncStatus),
             uploadedAt: Value(DateTime.now()),
@@ -192,16 +255,19 @@ class AppDatabase extends _$AppDatabase {
     String entityType,
     String entityId,
   ) {
-    return (select(syncQueues)
-          ..where((tbl) =>
-              tbl.entityType.equals(entityType) & tbl.entityId.equals(entityId)))
+    return (select(syncQueues)..where(
+          (tbl) =>
+              tbl.entityType.equals(entityType) & tbl.entityId.equals(entityId),
+        ))
         .get();
   }
 
   /// Mark sync item as processed
   Future<bool> markSyncItemAsProcessed(String syncQueueId) async {
-    final result = await (update(syncQueues)..where((tbl) => tbl.id.equals(syncQueueId)))
-        .write(
+    final result =
+        await (update(
+          syncQueues,
+        )..where((tbl) => tbl.id.equals(syncQueueId))).write(
           SyncQueuesCompanion(
             processedAt: Value(DateTime.now()),
             updatedAt: Value(DateTime.now()),
@@ -211,9 +277,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Update sync item error
-  Future<bool> updateSyncItemError(String syncQueueId, String errorMessage) async {
-    final result = await (update(syncQueues)..where((tbl) => tbl.id.equals(syncQueueId)))
-        .write(
+  Future<bool> updateSyncItemError(
+    String syncQueueId,
+    String errorMessage,
+  ) async {
+    final result =
+        await (update(
+          syncQueues,
+        )..where((tbl) => tbl.id.equals(syncQueueId))).write(
           SyncQueuesCompanion(
             lastErrorMessage: Value(errorMessage),
             updatedAt: Value(DateTime.now()),
@@ -229,8 +300,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Clear processed sync items
   Future<int> clearProcessedSyncItems() {
-    return (delete(syncQueues)..where((tbl) => tbl.processedAt.isNotNull()))
-        .go();
+    return (delete(
+      syncQueues,
+    )..where((tbl) => tbl.processedAt.isNotNull())).go();
   }
 
   // ===== USER SESSION DAOS =====
@@ -243,15 +315,21 @@ class AppDatabase extends _$AppDatabase {
   /// Get active user session
   Future<UserSession?> getActiveUserSession() async {
     return (select(userSessions)
-          ..orderBy([(tbl) => OrderingTerm(expression: tbl.createdAt, mode: OrderingMode.desc)])
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.createdAt,
+              mode: OrderingMode.desc,
+            ),
+          ])
           ..limit(1))
         .getSingleOrNull();
   }
 
   /// Get user session by ID
   Future<UserSession?> getUserSessionById(String id) async {
-    return (select(userSessions)..where((tbl) => tbl.id.equals(id)))
-        .getSingleOrNull();
+    return (select(
+      userSessions,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
   /// Delete user session
@@ -266,9 +344,51 @@ class AppDatabase extends _$AppDatabase {
 
   /// Update session last activity
   Future<bool> updateSessionLastActivity(String sessionId) async {
-    final result = await (update(userSessions)..where((tbl) => tbl.id.equals(sessionId)))
-        .write(UserSessionsCompanion(lastActivityAt: Value(DateTime.now())));
+    final result =
+        await (update(
+          userSessions,
+        )..where((tbl) => tbl.id.equals(sessionId))).write(
+          UserSessionsCompanion(lastActivityAt: Value(DateTime.now())),
+        );
     return result > 0;
+  }
+
+  // ===== RPU QUEUE DAOS =====
+
+  /// Add or update a land parcel in the local validation queue
+  Future<void> upsertRpuQueueItem(RpuQueueItemsCompanion item) async {
+    await into(rpuQueueItems).insertOnConflictUpdate(item);
+  }
+
+  /// Get all queued land parcels, most recently added first
+  Future<List<RpuQueueItem>> getRpuQueueItems() {
+    return (select(rpuQueueItems)..orderBy([
+          (tbl) =>
+              OrderingTerm(expression: tbl.addedAt, mode: OrderingMode.desc),
+        ]))
+        .get();
+  }
+
+  /// Live-updating list of queued land parcels, most recently added first
+  Stream<List<RpuQueueItem>> watchRpuQueueItems() {
+    return (select(rpuQueueItems)..orderBy([
+          (tbl) =>
+              OrderingTerm(expression: tbl.addedAt, mode: OrderingMode.desc),
+        ]))
+        .watch();
+  }
+
+  /// Check whether a land parcel is already queued
+  Future<bool> isRpuQueued(String id) async {
+    final item = await (select(
+      rpuQueueItems,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    return item != null;
+  }
+
+  /// Remove a land parcel from the local validation queue
+  Future<int> deleteRpuQueueItem(String id) {
+    return (delete(rpuQueueItems)..where((tbl) => tbl.id.equals(id))).go();
   }
 }
 

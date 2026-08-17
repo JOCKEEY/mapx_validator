@@ -1,30 +1,19 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../core/errors/failures.dart';
-import '../domain/parcel_models.dart';
+import 'parcel_models.dart';
 
-/// Repository contract for parcel operations
+/// Repository contract for land parcel operations
 abstract class ParcelRepository {
-  /// Search parcels by query (PIN or TD Number)
-  Future<Either<Failure, List<ParcelSearchResult>>> searchParcels({
-    required String query,
-  });
+  /// Search land parcels by PIN or TD Number (comma-separated for multiple)
+  Future<Either<Failure, List<LandParcel>>> searchLand(String query);
 
-  /// Get detailed information for a parcel
-  Future<Either<Failure, ParcelEntity>> getParcelById({
-    required String parcelId,
-  });
+  /// Save a parcel locally to validate later
+  Future<Either<Failure, void>> addToQueue(LandParcel parcel);
 
-  /// Get cached parcels from local database
-  Future<Either<Failure, List<ParcelEntity>>> getCachedParcels();
+  /// Remove a parcel from the local validation queue
+  Future<Either<Failure, void>> removeFromQueue(String parcelId);
 
-  /// Download parcels for offline access
-  Future<Either<Failure, void>> downloadParcelsForBarangay({
-    required String barangayId,
-  });
-
-  /// Cache search results locally
-  Future<Either<Failure, void>> cacheParcel({
-    required ParcelEntity parcel,
-  });
+  /// Get all parcels currently queued for validation
+  Future<Either<Failure, List<LandParcel>>> getQueuedParcels();
 }

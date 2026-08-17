@@ -89,7 +89,7 @@ class LocationService {
     required double endLatitude,
     required double endLongitude,
   }) async {
-    return await Geolocator.distanceBetween(
+    return Geolocator.distanceBetween(
       startLatitude,
       startLongitude,
       endLatitude,

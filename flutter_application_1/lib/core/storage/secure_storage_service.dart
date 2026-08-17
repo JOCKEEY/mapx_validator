@@ -55,10 +55,11 @@ class SecureStorageService {
     return DateTime.tryParse(expiresAtStr);
   }
 
-  /// Check if token is expired
+  /// Check if token is expired. Tokens with no known expiry (e.g. the
+  /// backend didn't provide one) are treated as not expired.
   Future<bool> isTokenExpired() async {
     final expiresAt = await getTokenExpiresAt();
-    if (expiresAt == null) return true;
+    if (expiresAt == null) return false;
     return DateTime.now().isAfter(expiresAt);
   }
 

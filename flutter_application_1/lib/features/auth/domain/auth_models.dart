@@ -1,110 +1,155 @@
-/// Simple auth models without Freezed for quick testing
-/// TODO: Migrate back to Freezed once code generation works properly
-
-/// Login request DTO
-class LoginRequestDto {
-  final String username;
-  final String password;
-
-  LoginRequestDto({
-    required this.username,
-    required this.password,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'username': username,
-    'password': password,
-  };
-
-  factory LoginRequestDto.fromJson(Map<String, dynamic> json) =>
-      LoginRequestDto(
-        username: json['username'] as String,
-        password: json['password'] as String,
-      );
-}
-
-/// User DTO
-class UserDto {
-  final String id;
-  final String name;
-  final String email;
-
-  UserDto({
-    required this.id,
-    required this.name,
-    required this.email,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'email': email,
-  };
-
-  factory UserDto.fromJson(Map<String, dynamic> json) =>
-      UserDto(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        email: json['email'] as String,
-      );
-}
-
-/// Login response DTO
+/// Login response from POST /api/v1/rpuvalidator/login-app-user
 class LoginResponseDto {
-  final String accessToken;
-  final String? refreshToken;
-  final UserDto user;
-  final DateTime? expiresAt;
+  final int id;
+  final String emailAddress;
+  final String fullName;
+  final String token;
+  final String emailStatus;
+  final bool isSuperAdmin;
+  final bool isInActive;
+  final bool isPremiumAccount;
+  final bool isRPUEncoder;
+  final bool isMiscEncoder;
+  final bool isSMVEncoder;
+  final bool isBiller;
+  final bool isFAASEncoder;
+  final bool isMapViewer;
+  final bool isRPURequestManager;
+  final bool isRPUValidator;
+  final bool isFAASValidator;
+  final bool isMapDataManager;
+  final bool rpuOwner;
+  final String? region;
+  final String? province;
+  final String? municipality;
+  final List<String> municipalityAccess;
+  final List<String> restrictedRpuFields;
 
   LoginResponseDto({
-    required this.accessToken,
-    this.refreshToken,
-    required this.user,
-    this.expiresAt,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'accessToken': accessToken,
-    'refreshToken': refreshToken,
-    'user': user.toJson(),
-    'expiresAt': expiresAt?.toIso8601String(),
-  };
-
-  factory LoginResponseDto.fromJson(Map<String, dynamic> json) =>
-      LoginResponseDto(
-        accessToken: json['accessToken'] as String,
-        refreshToken: json['refreshToken'] as String?,
-        user: UserDto.fromJson(json['user'] as Map<String, dynamic>),
-        expiresAt: json['expiresAt'] != null 
-            ? DateTime.parse(json['expiresAt'] as String)
-            : null,
-      );
-}
-
-/// User domain entity
-class UserEntity {
-  final String id;
-  final String name;
-  final String email;
-
-  UserEntity({
     required this.id,
-    required this.name,
-    required this.email,
+    required this.emailAddress,
+    required this.fullName,
+    required this.token,
+    required this.emailStatus,
+    required this.isSuperAdmin,
+    required this.isInActive,
+    required this.isPremiumAccount,
+    required this.isRPUEncoder,
+    required this.isMiscEncoder,
+    required this.isSMVEncoder,
+    required this.isBiller,
+    required this.isFAASEncoder,
+    required this.isMapViewer,
+    required this.isRPURequestManager,
+    required this.isRPUValidator,
+    required this.isFAASValidator,
+    required this.isMapDataManager,
+    required this.rpuOwner,
+    this.region,
+    this.province,
+    this.municipality,
+    required this.municipalityAccess,
+    required this.restrictedRpuFields,
   });
 
-  factory UserEntity.fromDto(UserDto dto) {
-    return UserEntity(
-      id: dto.id,
-      name: dto.name,
-      email: dto.email,
+  factory LoginResponseDto.fromJson(Map<String, dynamic> json) {
+    return LoginResponseDto(
+      id: json['id'] as int,
+      emailAddress: json['emailAddress'] as String? ?? '',
+      fullName: json['fullName'] as String? ?? '',
+      token: json['token'] as String,
+      emailStatus: json['emailStatus'] as String? ?? '',
+      isSuperAdmin: json['isSuperAdmin'] as bool? ?? false,
+      isInActive: json['isInActive'] as bool? ?? false,
+      isPremiumAccount: json['isPremiumAccount'] as bool? ?? false,
+      isRPUEncoder: json['isRPUEncoder'] as bool? ?? false,
+      isMiscEncoder: json['isMiscEncoder'] as bool? ?? false,
+      isSMVEncoder: json['isSMVEncoder'] as bool? ?? false,
+      isBiller: json['isBiller'] as bool? ?? false,
+      isFAASEncoder: json['isFAASEncoder'] as bool? ?? false,
+      isMapViewer: json['isMapViewer'] as bool? ?? false,
+      isRPURequestManager: json['isRPURequestManager'] as bool? ?? false,
+      isRPUValidator: json['isRPUValidator'] as bool? ?? false,
+      isFAASValidator: json['isFAASValidator'] as bool? ?? false,
+      isMapDataManager: json['isMapDataManager'] as bool? ?? false,
+      rpuOwner: json['rpuOwner'] as bool? ?? false,
+      region: json['region'] as String?,
+      province: json['province'] as String?,
+      municipality: json['municipality'] as String?,
+      municipalityAccess: (json['municipalityAccess'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
+      restrictedRpuFields:
+          (json['restrictedRpuFields'] as List<dynamic>? ?? [])
+              .map((e) => e.toString())
+              .toList(),
     );
   }
 
-  UserDto toDto() => UserDto(
-    id: id,
-    name: name,
-    email: email,
-  );
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'emailAddress': emailAddress,
+        'fullName': fullName,
+        'token': token,
+        'emailStatus': emailStatus,
+        'isSuperAdmin': isSuperAdmin,
+        'isInActive': isInActive,
+        'isPremiumAccount': isPremiumAccount,
+        'isRPUEncoder': isRPUEncoder,
+        'isMiscEncoder': isMiscEncoder,
+        'isSMVEncoder': isSMVEncoder,
+        'isBiller': isBiller,
+        'isFAASEncoder': isFAASEncoder,
+        'isMapViewer': isMapViewer,
+        'isRPURequestManager': isRPURequestManager,
+        'isRPUValidator': isRPUValidator,
+        'isFAASValidator': isFAASValidator,
+        'isMapDataManager': isMapDataManager,
+        'rpuOwner': rpuOwner,
+        'region': region,
+        'province': province,
+        'municipality': municipality,
+        'municipalityAccess': municipalityAccess,
+        'restrictedRpuFields': restrictedRpuFields,
+      };
 }
 
+/// User domain entity, derived from the login response
+class UserEntity {
+  final int id;
+  final String fullName;
+  final String emailAddress;
+  final bool isSuperAdmin;
+  final bool isRPUValidator;
+  final bool isPremiumAccount;
+  final String? region;
+  final String? province;
+  final String? municipality;
+  final List<String> municipalityAccess;
+
+  UserEntity({
+    required this.id,
+    required this.fullName,
+    required this.emailAddress,
+    required this.isSuperAdmin,
+    required this.isRPUValidator,
+    required this.isPremiumAccount,
+    this.region,
+    this.province,
+    this.municipality,
+    required this.municipalityAccess,
+  });
+
+  factory UserEntity.fromLoginResponse(LoginResponseDto dto) => UserEntity(
+        id: dto.id,
+        fullName: dto.fullName,
+        emailAddress: dto.emailAddress,
+        isSuperAdmin: dto.isSuperAdmin,
+        isRPUValidator: dto.isRPUValidator,
+        isPremiumAccount: dto.isPremiumAccount,
+        region: dto.region,
+        province: dto.province,
+        municipality: dto.municipality,
+        municipalityAccess: dto.municipalityAccess,
+      );
+}

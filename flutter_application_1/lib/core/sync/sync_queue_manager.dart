@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
@@ -27,9 +28,7 @@ class SyncQueueManager {
         entityType: Value(entityType),
         entityId: Value(entityId),
         operation: Value(operation),
-        payloadJson: Value(
-          payload.toString(), // In real app, use jsonEncode
-        ),
+        payloadJson: Value(jsonEncode(payload)),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
       ),

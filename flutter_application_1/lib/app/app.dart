@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'providers/app_providers.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
@@ -10,8 +11,12 @@ class MapXFieldValidatorApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Activates automatic retry of locally-saved validations once the
+    // device is back online.
+    ref.watch(validationSyncCoordinatorProvider);
+
     return MaterialApp.router(
-      title: 'MapX Field Validator',
+      title: 'MapX Validator',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,

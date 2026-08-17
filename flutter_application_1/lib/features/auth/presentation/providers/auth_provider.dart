@@ -1,20 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/providers/app_providers.dart';
 import '../../domain/auth_models.dart';
+import '../../domain/auth_usecases.dart';
 
 /// Auth state - represents the current authentication state
 class AuthState {
   final bool isLoading;
   final bool isAuthenticated;
   final UserEntity? user;
-  final String? accessToken;
   final String? errorMessage;
 
   const AuthState({
     this.isLoading = false,
     this.isAuthenticated = false,
     this.user,
-    this.accessToken,
     this.errorMessage,
   });
 
@@ -22,37 +22,66 @@ class AuthState {
       : isLoading = false,
         isAuthenticated = false,
         user = null,
-        accessToken = null,
         errorMessage = null;
 
   const AuthState.loading()
       : isLoading = true,
         isAuthenticated = false,
         user = null,
-        accessToken = null,
         errorMessage = null;
 
-  AuthState.authenticated({required UserEntity user, required String accessToken})
+  AuthState.authenticated(this.user)
       : isLoading = false,
         isAuthenticated = true,
-        user = user,
-        accessToken = accessToken,
         errorMessage = null;
+
+  AuthState.error(String message)
+      : isLoading = false,
+        isAuthenticated = false,
+        user = null,
+        errorMessage = message;
 }
 
 /// Auth state notifier
 class AuthStateNotifier extends StateNotifier<AuthState> {
-  AuthStateNotifier() : super(const AuthState.unauthenticated());
+  final LoginUseCase _loginUseCase;
+  final LogoutUseCase _logoutUseCase;
 
-  void setLoading() {
+  AuthStateNotifier({
+    required LoginUseCase loginUseCase,
+    required LogoutUseCase logoutUseCase,
+  })  : _loginUseCase = loginUseCase,
+        _logoutUseCase = logoutUseCase,
+        super(const AuthState.unauthenticated());
+
+  /// Attempt to login with the given credentials. Returns true on success.
+  Future<bool> login({
+    required String emailAddress,
+    required String password,
+    bool rememberMe = false,
+  }) async {
     state = const AuthState.loading();
+
+    final result = await _loginUseCase(
+      emailAddress: emailAddress,
+      password: password,
+      rememberMe: rememberMe,
+    );
+
+    return result.match(
+      (failure) {
+        state = AuthState.error(failure.message);
+        return false;
+      },
+      (user) {
+        state = AuthState.authenticated(user);
+        return true;
+      },
+    );
   }
 
-  void setAuthenticated(UserEntity user, String token) {
-    state = AuthState.authenticated(user: user, accessToken: token);
-  }
-
-  void setUnauthenticated() {
+  Future<void> logout() async {
+    await _logoutUseCase();
     state = const AuthState.unauthenticated();
   }
 }
@@ -60,5 +89,8 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 /// Auth state provider
 final authStateProvider =
     StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
-  return AuthStateNotifier();
+  return AuthStateNotifier(
+    loginUseCase: ref.watch(loginUseCaseProvider),
+    logoutUseCase: ref.watch(logoutUseCaseProvider),
+  );
 });

@@ -818,6 +818,17 @@ class $ValidationsTable extends Validations
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _tdNumberMeta = const VerificationMeta(
+    'tdNumber',
+  );
+  @override
+  late final GeneratedColumn<String> tdNumber = GeneratedColumn<String>(
+    'td_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -921,6 +932,7 @@ class $ValidationsTable extends Validations
   List<GeneratedColumn> get $columns => [
     id,
     parcelId,
+    tdNumber,
     status,
     remarks,
     latitude,
@@ -955,6 +967,12 @@ class $ValidationsTable extends Validations
       );
     } else if (isInserting) {
       context.missing(_parcelIdMeta);
+    }
+    if (data.containsKey('td_number')) {
+      context.handle(
+        _tdNumberMeta,
+        tdNumber.isAcceptableOrUnknown(data['td_number']!, _tdNumberMeta),
+      );
     }
     if (data.containsKey('status')) {
       context.handle(
@@ -1041,6 +1059,10 @@ class $ValidationsTable extends Validations
         DriftSqlType.string,
         data['${effectivePrefix}parcel_id'],
       )!,
+      tdNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}td_number'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1089,6 +1111,7 @@ class $ValidationsTable extends Validations
 class Validation extends DataClass implements Insertable<Validation> {
   final String id;
   final String parcelId;
+  final String? tdNumber;
   final String status;
   final String? remarks;
   final double latitude;
@@ -1101,6 +1124,7 @@ class Validation extends DataClass implements Insertable<Validation> {
   const Validation({
     required this.id,
     required this.parcelId,
+    this.tdNumber,
     required this.status,
     this.remarks,
     required this.latitude,
@@ -1116,6 +1140,9 @@ class Validation extends DataClass implements Insertable<Validation> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['parcel_id'] = Variable<String>(parcelId);
+    if (!nullToAbsent || tdNumber != null) {
+      map['td_number'] = Variable<String>(tdNumber);
+    }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || remarks != null) {
       map['remarks'] = Variable<String>(remarks);
@@ -1136,6 +1163,9 @@ class Validation extends DataClass implements Insertable<Validation> {
     return ValidationsCompanion(
       id: Value(id),
       parcelId: Value(parcelId),
+      tdNumber: tdNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tdNumber),
       status: Value(status),
       remarks: remarks == null && nullToAbsent
           ? const Value.absent()
@@ -1160,6 +1190,7 @@ class Validation extends DataClass implements Insertable<Validation> {
     return Validation(
       id: serializer.fromJson<String>(json['id']),
       parcelId: serializer.fromJson<String>(json['parcelId']),
+      tdNumber: serializer.fromJson<String?>(json['tdNumber']),
       status: serializer.fromJson<String>(json['status']),
       remarks: serializer.fromJson<String?>(json['remarks']),
       latitude: serializer.fromJson<double>(json['latitude']),
@@ -1177,6 +1208,7 @@ class Validation extends DataClass implements Insertable<Validation> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'parcelId': serializer.toJson<String>(parcelId),
+      'tdNumber': serializer.toJson<String?>(tdNumber),
       'status': serializer.toJson<String>(status),
       'remarks': serializer.toJson<String?>(remarks),
       'latitude': serializer.toJson<double>(latitude),
@@ -1192,6 +1224,7 @@ class Validation extends DataClass implements Insertable<Validation> {
   Validation copyWith({
     String? id,
     String? parcelId,
+    Value<String?> tdNumber = const Value.absent(),
     String? status,
     Value<String?> remarks = const Value.absent(),
     double? latitude,
@@ -1204,6 +1237,7 @@ class Validation extends DataClass implements Insertable<Validation> {
   }) => Validation(
     id: id ?? this.id,
     parcelId: parcelId ?? this.parcelId,
+    tdNumber: tdNumber.present ? tdNumber.value : this.tdNumber,
     status: status ?? this.status,
     remarks: remarks.present ? remarks.value : this.remarks,
     latitude: latitude ?? this.latitude,
@@ -1218,6 +1252,7 @@ class Validation extends DataClass implements Insertable<Validation> {
     return Validation(
       id: data.id.present ? data.id.value : this.id,
       parcelId: data.parcelId.present ? data.parcelId.value : this.parcelId,
+      tdNumber: data.tdNumber.present ? data.tdNumber.value : this.tdNumber,
       status: data.status.present ? data.status.value : this.status,
       remarks: data.remarks.present ? data.remarks.value : this.remarks,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
@@ -1239,6 +1274,7 @@ class Validation extends DataClass implements Insertable<Validation> {
     return (StringBuffer('Validation(')
           ..write('id: $id, ')
           ..write('parcelId: $parcelId, ')
+          ..write('tdNumber: $tdNumber, ')
           ..write('status: $status, ')
           ..write('remarks: $remarks, ')
           ..write('latitude: $latitude, ')
@@ -1256,6 +1292,7 @@ class Validation extends DataClass implements Insertable<Validation> {
   int get hashCode => Object.hash(
     id,
     parcelId,
+    tdNumber,
     status,
     remarks,
     latitude,
@@ -1272,6 +1309,7 @@ class Validation extends DataClass implements Insertable<Validation> {
       (other is Validation &&
           other.id == this.id &&
           other.parcelId == this.parcelId &&
+          other.tdNumber == this.tdNumber &&
           other.status == this.status &&
           other.remarks == this.remarks &&
           other.latitude == this.latitude &&
@@ -1286,6 +1324,7 @@ class Validation extends DataClass implements Insertable<Validation> {
 class ValidationsCompanion extends UpdateCompanion<Validation> {
   final Value<String> id;
   final Value<String> parcelId;
+  final Value<String?> tdNumber;
   final Value<String> status;
   final Value<String?> remarks;
   final Value<double> latitude;
@@ -1299,6 +1338,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
   const ValidationsCompanion({
     this.id = const Value.absent(),
     this.parcelId = const Value.absent(),
+    this.tdNumber = const Value.absent(),
     this.status = const Value.absent(),
     this.remarks = const Value.absent(),
     this.latitude = const Value.absent(),
@@ -1313,6 +1353,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
   ValidationsCompanion.insert({
     required String id,
     required String parcelId,
+    this.tdNumber = const Value.absent(),
     required String status,
     this.remarks = const Value.absent(),
     required double latitude,
@@ -1333,6 +1374,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
   static Insertable<Validation> custom({
     Expression<String>? id,
     Expression<String>? parcelId,
+    Expression<String>? tdNumber,
     Expression<String>? status,
     Expression<String>? remarks,
     Expression<double>? latitude,
@@ -1347,6 +1389,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (parcelId != null) 'parcel_id': parcelId,
+      if (tdNumber != null) 'td_number': tdNumber,
       if (status != null) 'status': status,
       if (remarks != null) 'remarks': remarks,
       if (latitude != null) 'latitude': latitude,
@@ -1363,6 +1406,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
   ValidationsCompanion copyWith({
     Value<String>? id,
     Value<String>? parcelId,
+    Value<String?>? tdNumber,
     Value<String>? status,
     Value<String?>? remarks,
     Value<double>? latitude,
@@ -1377,6 +1421,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
     return ValidationsCompanion(
       id: id ?? this.id,
       parcelId: parcelId ?? this.parcelId,
+      tdNumber: tdNumber ?? this.tdNumber,
       status: status ?? this.status,
       remarks: remarks ?? this.remarks,
       latitude: latitude ?? this.latitude,
@@ -1398,6 +1443,9 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
     }
     if (parcelId.present) {
       map['parcel_id'] = Variable<String>(parcelId.value);
+    }
+    if (tdNumber.present) {
+      map['td_number'] = Variable<String>(tdNumber.value);
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -1437,6 +1485,7 @@ class ValidationsCompanion extends UpdateCompanion<Validation> {
     return (StringBuffer('ValidationsCompanion(')
           ..write('id: $id, ')
           ..write('parcelId: $parcelId, ')
+          ..write('tdNumber: $tdNumber, ')
           ..write('status: $status, ')
           ..write('remarks: $remarks, ')
           ..write('latitude: $latitude, ')
@@ -3300,6 +3349,576 @@ class UserSessionsCompanion extends UpdateCompanion<UserSession> {
   }
 }
 
+class $RpuQueueItemsTable extends RpuQueueItems
+    with TableInfo<$RpuQueueItemsTable, RpuQueueItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RpuQueueItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pinMeta = const VerificationMeta('pin');
+  @override
+  late final GeneratedColumn<String> pin = GeneratedColumn<String>(
+    'pin',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tdNumberMeta = const VerificationMeta(
+    'tdNumber',
+  );
+  @override
+  late final GeneratedColumn<String> tdNumber = GeneratedColumn<String>(
+    'td_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerMeta = const VerificationMeta('owner');
+  @override
+  late final GeneratedColumn<String> owner = GeneratedColumn<String>(
+    'owner',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _municipalityMeta = const VerificationMeta(
+    'municipality',
+  );
+  @override
+  late final GeneratedColumn<String> municipality = GeneratedColumn<String>(
+    'municipality',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _barangayMeta = const VerificationMeta(
+    'barangay',
+  );
+  @override
+  late final GeneratedColumn<String> barangay = GeneratedColumn<String>(
+    'barangay',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _landClassMeta = const VerificationMeta(
+    'landClass',
+  );
+  @override
+  late final GeneratedColumn<String> landClass = GeneratedColumn<String>(
+    'land_class',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _addedAtMeta = const VerificationMeta(
+    'addedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> addedAt = GeneratedColumn<DateTime>(
+    'added_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    pin,
+    tdNumber,
+    owner,
+    municipality,
+    barangay,
+    landClass,
+    payloadJson,
+    addedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'rpu_queue_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RpuQueueItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('pin')) {
+      context.handle(
+        _pinMeta,
+        pin.isAcceptableOrUnknown(data['pin']!, _pinMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pinMeta);
+    }
+    if (data.containsKey('td_number')) {
+      context.handle(
+        _tdNumberMeta,
+        tdNumber.isAcceptableOrUnknown(data['td_number']!, _tdNumberMeta),
+      );
+    }
+    if (data.containsKey('owner')) {
+      context.handle(
+        _ownerMeta,
+        owner.isAcceptableOrUnknown(data['owner']!, _ownerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerMeta);
+    }
+    if (data.containsKey('municipality')) {
+      context.handle(
+        _municipalityMeta,
+        municipality.isAcceptableOrUnknown(
+          data['municipality']!,
+          _municipalityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('barangay')) {
+      context.handle(
+        _barangayMeta,
+        barangay.isAcceptableOrUnknown(data['barangay']!, _barangayMeta),
+      );
+    }
+    if (data.containsKey('land_class')) {
+      context.handle(
+        _landClassMeta,
+        landClass.isAcceptableOrUnknown(data['land_class']!, _landClassMeta),
+      );
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('added_at')) {
+      context.handle(
+        _addedAtMeta,
+        addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_addedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RpuQueueItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RpuQueueItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      pin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pin'],
+      )!,
+      tdNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}td_number'],
+      ),
+      owner: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner'],
+      )!,
+      municipality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}municipality'],
+      ),
+      barangay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barangay'],
+      ),
+      landClass: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}land_class'],
+      ),
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      addedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}added_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RpuQueueItemsTable createAlias(String alias) {
+    return $RpuQueueItemsTable(attachedDatabase, alias);
+  }
+}
+
+class RpuQueueItem extends DataClass implements Insertable<RpuQueueItem> {
+  final String id;
+  final String pin;
+  final String? tdNumber;
+  final String owner;
+  final String? municipality;
+  final String? barangay;
+  final String? landClass;
+  final String payloadJson;
+  final DateTime addedAt;
+  const RpuQueueItem({
+    required this.id,
+    required this.pin,
+    this.tdNumber,
+    required this.owner,
+    this.municipality,
+    this.barangay,
+    this.landClass,
+    required this.payloadJson,
+    required this.addedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['pin'] = Variable<String>(pin);
+    if (!nullToAbsent || tdNumber != null) {
+      map['td_number'] = Variable<String>(tdNumber);
+    }
+    map['owner'] = Variable<String>(owner);
+    if (!nullToAbsent || municipality != null) {
+      map['municipality'] = Variable<String>(municipality);
+    }
+    if (!nullToAbsent || barangay != null) {
+      map['barangay'] = Variable<String>(barangay);
+    }
+    if (!nullToAbsent || landClass != null) {
+      map['land_class'] = Variable<String>(landClass);
+    }
+    map['payload_json'] = Variable<String>(payloadJson);
+    map['added_at'] = Variable<DateTime>(addedAt);
+    return map;
+  }
+
+  RpuQueueItemsCompanion toCompanion(bool nullToAbsent) {
+    return RpuQueueItemsCompanion(
+      id: Value(id),
+      pin: Value(pin),
+      tdNumber: tdNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tdNumber),
+      owner: Value(owner),
+      municipality: municipality == null && nullToAbsent
+          ? const Value.absent()
+          : Value(municipality),
+      barangay: barangay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barangay),
+      landClass: landClass == null && nullToAbsent
+          ? const Value.absent()
+          : Value(landClass),
+      payloadJson: Value(payloadJson),
+      addedAt: Value(addedAt),
+    );
+  }
+
+  factory RpuQueueItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RpuQueueItem(
+      id: serializer.fromJson<String>(json['id']),
+      pin: serializer.fromJson<String>(json['pin']),
+      tdNumber: serializer.fromJson<String?>(json['tdNumber']),
+      owner: serializer.fromJson<String>(json['owner']),
+      municipality: serializer.fromJson<String?>(json['municipality']),
+      barangay: serializer.fromJson<String?>(json['barangay']),
+      landClass: serializer.fromJson<String?>(json['landClass']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      addedAt: serializer.fromJson<DateTime>(json['addedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'pin': serializer.toJson<String>(pin),
+      'tdNumber': serializer.toJson<String?>(tdNumber),
+      'owner': serializer.toJson<String>(owner),
+      'municipality': serializer.toJson<String?>(municipality),
+      'barangay': serializer.toJson<String?>(barangay),
+      'landClass': serializer.toJson<String?>(landClass),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'addedAt': serializer.toJson<DateTime>(addedAt),
+    };
+  }
+
+  RpuQueueItem copyWith({
+    String? id,
+    String? pin,
+    Value<String?> tdNumber = const Value.absent(),
+    String? owner,
+    Value<String?> municipality = const Value.absent(),
+    Value<String?> barangay = const Value.absent(),
+    Value<String?> landClass = const Value.absent(),
+    String? payloadJson,
+    DateTime? addedAt,
+  }) => RpuQueueItem(
+    id: id ?? this.id,
+    pin: pin ?? this.pin,
+    tdNumber: tdNumber.present ? tdNumber.value : this.tdNumber,
+    owner: owner ?? this.owner,
+    municipality: municipality.present ? municipality.value : this.municipality,
+    barangay: barangay.present ? barangay.value : this.barangay,
+    landClass: landClass.present ? landClass.value : this.landClass,
+    payloadJson: payloadJson ?? this.payloadJson,
+    addedAt: addedAt ?? this.addedAt,
+  );
+  RpuQueueItem copyWithCompanion(RpuQueueItemsCompanion data) {
+    return RpuQueueItem(
+      id: data.id.present ? data.id.value : this.id,
+      pin: data.pin.present ? data.pin.value : this.pin,
+      tdNumber: data.tdNumber.present ? data.tdNumber.value : this.tdNumber,
+      owner: data.owner.present ? data.owner.value : this.owner,
+      municipality: data.municipality.present
+          ? data.municipality.value
+          : this.municipality,
+      barangay: data.barangay.present ? data.barangay.value : this.barangay,
+      landClass: data.landClass.present ? data.landClass.value : this.landClass,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RpuQueueItem(')
+          ..write('id: $id, ')
+          ..write('pin: $pin, ')
+          ..write('tdNumber: $tdNumber, ')
+          ..write('owner: $owner, ')
+          ..write('municipality: $municipality, ')
+          ..write('barangay: $barangay, ')
+          ..write('landClass: $landClass, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    pin,
+    tdNumber,
+    owner,
+    municipality,
+    barangay,
+    landClass,
+    payloadJson,
+    addedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RpuQueueItem &&
+          other.id == this.id &&
+          other.pin == this.pin &&
+          other.tdNumber == this.tdNumber &&
+          other.owner == this.owner &&
+          other.municipality == this.municipality &&
+          other.barangay == this.barangay &&
+          other.landClass == this.landClass &&
+          other.payloadJson == this.payloadJson &&
+          other.addedAt == this.addedAt);
+}
+
+class RpuQueueItemsCompanion extends UpdateCompanion<RpuQueueItem> {
+  final Value<String> id;
+  final Value<String> pin;
+  final Value<String?> tdNumber;
+  final Value<String> owner;
+  final Value<String?> municipality;
+  final Value<String?> barangay;
+  final Value<String?> landClass;
+  final Value<String> payloadJson;
+  final Value<DateTime> addedAt;
+  final Value<int> rowid;
+  const RpuQueueItemsCompanion({
+    this.id = const Value.absent(),
+    this.pin = const Value.absent(),
+    this.tdNumber = const Value.absent(),
+    this.owner = const Value.absent(),
+    this.municipality = const Value.absent(),
+    this.barangay = const Value.absent(),
+    this.landClass = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.addedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RpuQueueItemsCompanion.insert({
+    required String id,
+    required String pin,
+    this.tdNumber = const Value.absent(),
+    required String owner,
+    this.municipality = const Value.absent(),
+    this.barangay = const Value.absent(),
+    this.landClass = const Value.absent(),
+    required String payloadJson,
+    required DateTime addedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       pin = Value(pin),
+       owner = Value(owner),
+       payloadJson = Value(payloadJson),
+       addedAt = Value(addedAt);
+  static Insertable<RpuQueueItem> custom({
+    Expression<String>? id,
+    Expression<String>? pin,
+    Expression<String>? tdNumber,
+    Expression<String>? owner,
+    Expression<String>? municipality,
+    Expression<String>? barangay,
+    Expression<String>? landClass,
+    Expression<String>? payloadJson,
+    Expression<DateTime>? addedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (pin != null) 'pin': pin,
+      if (tdNumber != null) 'td_number': tdNumber,
+      if (owner != null) 'owner': owner,
+      if (municipality != null) 'municipality': municipality,
+      if (barangay != null) 'barangay': barangay,
+      if (landClass != null) 'land_class': landClass,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (addedAt != null) 'added_at': addedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RpuQueueItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? pin,
+    Value<String?>? tdNumber,
+    Value<String>? owner,
+    Value<String?>? municipality,
+    Value<String?>? barangay,
+    Value<String?>? landClass,
+    Value<String>? payloadJson,
+    Value<DateTime>? addedAt,
+    Value<int>? rowid,
+  }) {
+    return RpuQueueItemsCompanion(
+      id: id ?? this.id,
+      pin: pin ?? this.pin,
+      tdNumber: tdNumber ?? this.tdNumber,
+      owner: owner ?? this.owner,
+      municipality: municipality ?? this.municipality,
+      barangay: barangay ?? this.barangay,
+      landClass: landClass ?? this.landClass,
+      payloadJson: payloadJson ?? this.payloadJson,
+      addedAt: addedAt ?? this.addedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (pin.present) {
+      map['pin'] = Variable<String>(pin.value);
+    }
+    if (tdNumber.present) {
+      map['td_number'] = Variable<String>(tdNumber.value);
+    }
+    if (owner.present) {
+      map['owner'] = Variable<String>(owner.value);
+    }
+    if (municipality.present) {
+      map['municipality'] = Variable<String>(municipality.value);
+    }
+    if (barangay.present) {
+      map['barangay'] = Variable<String>(barangay.value);
+    }
+    if (landClass.present) {
+      map['land_class'] = Variable<String>(landClass.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (addedAt.present) {
+      map['added_at'] = Variable<DateTime>(addedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RpuQueueItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('pin: $pin, ')
+          ..write('tdNumber: $tdNumber, ')
+          ..write('owner: $owner, ')
+          ..write('municipality: $municipality, ')
+          ..write('barangay: $barangay, ')
+          ..write('landClass: $landClass, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('addedAt: $addedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3310,6 +3929,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $SyncQueuesTable syncQueues = $SyncQueuesTable(this);
   late final $UserSessionsTable userSessions = $UserSessionsTable(this);
+  late final $RpuQueueItemsTable rpuQueueItems = $RpuQueueItemsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3320,6 +3940,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     validationPhotos,
     syncQueues,
     userSessions,
+    rpuQueueItems,
   ];
 }
 
@@ -3685,6 +4306,7 @@ typedef $$ValidationsTableCreateCompanionBuilder =
     ValidationsCompanion Function({
       required String id,
       required String parcelId,
+      Value<String?> tdNumber,
       required String status,
       Value<String?> remarks,
       required double latitude,
@@ -3700,6 +4322,7 @@ typedef $$ValidationsTableUpdateCompanionBuilder =
     ValidationsCompanion Function({
       Value<String> id,
       Value<String> parcelId,
+      Value<String?> tdNumber,
       Value<String> status,
       Value<String?> remarks,
       Value<double> latitude,
@@ -3728,6 +4351,11 @@ class $$ValidationsTableFilterComposer
 
   ColumnFilters<String> get parcelId => $composableBuilder(
     column: $table.parcelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tdNumber => $composableBuilder(
+    column: $table.tdNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3796,6 +4424,11 @@ class $$ValidationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get tdNumber => $composableBuilder(
+    column: $table.tdNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -3856,6 +4489,9 @@ class $$ValidationsTableAnnotationComposer
 
   GeneratedColumn<String> get parcelId =>
       $composableBuilder(column: $table.parcelId, builder: (column) => column);
+
+  GeneratedColumn<String> get tdNumber =>
+      $composableBuilder(column: $table.tdNumber, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -3922,6 +4558,7 @@ class $$ValidationsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> parcelId = const Value.absent(),
+                Value<String?> tdNumber = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> remarks = const Value.absent(),
                 Value<double> latitude = const Value.absent(),
@@ -3935,6 +4572,7 @@ class $$ValidationsTableTableManager
               }) => ValidationsCompanion(
                 id: id,
                 parcelId: parcelId,
+                tdNumber: tdNumber,
                 status: status,
                 remarks: remarks,
                 latitude: latitude,
@@ -3950,6 +4588,7 @@ class $$ValidationsTableTableManager
               ({
                 required String id,
                 required String parcelId,
+                Value<String?> tdNumber = const Value.absent(),
                 required String status,
                 Value<String?> remarks = const Value.absent(),
                 required double latitude,
@@ -3963,6 +4602,7 @@ class $$ValidationsTableTableManager
               }) => ValidationsCompanion.insert(
                 id: id,
                 parcelId: parcelId,
+                tdNumber: tdNumber,
                 status: status,
                 remarks: remarks,
                 latitude: latitude,
@@ -4896,6 +5536,286 @@ typedef $$UserSessionsTableProcessedTableManager =
       UserSession,
       PrefetchHooks Function()
     >;
+typedef $$RpuQueueItemsTableCreateCompanionBuilder =
+    RpuQueueItemsCompanion Function({
+      required String id,
+      required String pin,
+      Value<String?> tdNumber,
+      required String owner,
+      Value<String?> municipality,
+      Value<String?> barangay,
+      Value<String?> landClass,
+      required String payloadJson,
+      required DateTime addedAt,
+      Value<int> rowid,
+    });
+typedef $$RpuQueueItemsTableUpdateCompanionBuilder =
+    RpuQueueItemsCompanion Function({
+      Value<String> id,
+      Value<String> pin,
+      Value<String?> tdNumber,
+      Value<String> owner,
+      Value<String?> municipality,
+      Value<String?> barangay,
+      Value<String?> landClass,
+      Value<String> payloadJson,
+      Value<DateTime> addedAt,
+      Value<int> rowid,
+    });
+
+class $$RpuQueueItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $RpuQueueItemsTable> {
+  $$RpuQueueItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pin => $composableBuilder(
+    column: $table.pin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tdNumber => $composableBuilder(
+    column: $table.tdNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get municipality => $composableBuilder(
+    column: $table.municipality,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barangay => $composableBuilder(
+    column: $table.barangay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get landClass => $composableBuilder(
+    column: $table.landClass,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RpuQueueItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RpuQueueItemsTable> {
+  $$RpuQueueItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pin => $composableBuilder(
+    column: $table.pin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tdNumber => $composableBuilder(
+    column: $table.tdNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get owner => $composableBuilder(
+    column: $table.owner,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get municipality => $composableBuilder(
+    column: $table.municipality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get barangay => $composableBuilder(
+    column: $table.barangay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get landClass => $composableBuilder(
+    column: $table.landClass,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RpuQueueItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RpuQueueItemsTable> {
+  $$RpuQueueItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get pin =>
+      $composableBuilder(column: $table.pin, builder: (column) => column);
+
+  GeneratedColumn<String> get tdNumber =>
+      $composableBuilder(column: $table.tdNumber, builder: (column) => column);
+
+  GeneratedColumn<String> get owner =>
+      $composableBuilder(column: $table.owner, builder: (column) => column);
+
+  GeneratedColumn<String> get municipality => $composableBuilder(
+    column: $table.municipality,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get barangay =>
+      $composableBuilder(column: $table.barangay, builder: (column) => column);
+
+  GeneratedColumn<String> get landClass =>
+      $composableBuilder(column: $table.landClass, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get addedAt =>
+      $composableBuilder(column: $table.addedAt, builder: (column) => column);
+}
+
+class $$RpuQueueItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RpuQueueItemsTable,
+          RpuQueueItem,
+          $$RpuQueueItemsTableFilterComposer,
+          $$RpuQueueItemsTableOrderingComposer,
+          $$RpuQueueItemsTableAnnotationComposer,
+          $$RpuQueueItemsTableCreateCompanionBuilder,
+          $$RpuQueueItemsTableUpdateCompanionBuilder,
+          (
+            RpuQueueItem,
+            BaseReferences<_$AppDatabase, $RpuQueueItemsTable, RpuQueueItem>,
+          ),
+          RpuQueueItem,
+          PrefetchHooks Function()
+        > {
+  $$RpuQueueItemsTableTableManager(_$AppDatabase db, $RpuQueueItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RpuQueueItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RpuQueueItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RpuQueueItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> pin = const Value.absent(),
+                Value<String?> tdNumber = const Value.absent(),
+                Value<String> owner = const Value.absent(),
+                Value<String?> municipality = const Value.absent(),
+                Value<String?> barangay = const Value.absent(),
+                Value<String?> landClass = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<DateTime> addedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RpuQueueItemsCompanion(
+                id: id,
+                pin: pin,
+                tdNumber: tdNumber,
+                owner: owner,
+                municipality: municipality,
+                barangay: barangay,
+                landClass: landClass,
+                payloadJson: payloadJson,
+                addedAt: addedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String pin,
+                Value<String?> tdNumber = const Value.absent(),
+                required String owner,
+                Value<String?> municipality = const Value.absent(),
+                Value<String?> barangay = const Value.absent(),
+                Value<String?> landClass = const Value.absent(),
+                required String payloadJson,
+                required DateTime addedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RpuQueueItemsCompanion.insert(
+                id: id,
+                pin: pin,
+                tdNumber: tdNumber,
+                owner: owner,
+                municipality: municipality,
+                barangay: barangay,
+                landClass: landClass,
+                payloadJson: payloadJson,
+                addedAt: addedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RpuQueueItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RpuQueueItemsTable,
+      RpuQueueItem,
+      $$RpuQueueItemsTableFilterComposer,
+      $$RpuQueueItemsTableOrderingComposer,
+      $$RpuQueueItemsTableAnnotationComposer,
+      $$RpuQueueItemsTableCreateCompanionBuilder,
+      $$RpuQueueItemsTableUpdateCompanionBuilder,
+      (
+        RpuQueueItem,
+        BaseReferences<_$AppDatabase, $RpuQueueItemsTable, RpuQueueItem>,
+      ),
+      RpuQueueItem,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4910,4 +5830,6 @@ class $AppDatabaseManager {
       $$SyncQueuesTableTableManager(_db, _db.syncQueues);
   $$UserSessionsTableTableManager get userSessions =>
       $$UserSessionsTableTableManager(_db, _db.userSessions);
+  $$RpuQueueItemsTableTableManager get rpuQueueItems =>
+      $$RpuQueueItemsTableTableManager(_db, _db.rpuQueueItems);
 }

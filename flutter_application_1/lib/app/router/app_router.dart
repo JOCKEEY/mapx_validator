@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/home_screen.dart';
+import '../../features/navigation/presentation/screens/navigation_screen.dart';
+import '../../features/parcel/domain/parcel_models.dart';
 
 /// Route names for navigation
 abstract final class RouteNames {
@@ -25,9 +27,7 @@ final appRouterProvider = GoRouter(
   errorBuilder: (context, state) {
     return Scaffold(
       appBar: AppBar(title: const Text('Error')),
-      body: Center(
-        child: Text('Page not found: ${state.uri}'),
-      ),
+      body: Center(child: Text('Page not found: ${state.uri}')),
     );
   },
   routes: [
@@ -65,9 +65,7 @@ final appRouterProvider = GoRouter(
       builder: (context, state) {
         // Will be replaced with actual ParcelSearchScreen widget
         return const Scaffold(
-          body: Center(
-            child: Text('Parcel Search Screen'),
-          ),
+          body: Center(child: Text('Parcel Search Screen')),
         );
       },
     ),
@@ -78,25 +76,25 @@ final appRouterProvider = GoRouter(
       name: 'parcel-details',
       builder: (context, state) {
         final parcelId = state.pathParameters['id'] ?? '';
-        return Scaffold(
-          body: Center(
-            child: Text('Parcel Details: $parcelId'),
-          ),
-        );
+        return Scaffold(body: Center(child: Text('Parcel Details: $parcelId')));
       },
     ),
 
-    // Map navigation screen
+    // Map navigation screen — routes the validator from their current GPS
+    // location to a selected parcel. The parcel is passed via `extra`
+    // since it carries geometry/data not worth re-fetching by id alone.
     GoRoute(
       path: RouteNames.mapNavigation,
       name: 'map-navigation',
       builder: (context, state) {
-        final parcelId = state.pathParameters['parcelId'] ?? '';
-        return Scaffold(
-          body: Center(
-            child: Text('Map Navigation: $parcelId'),
-          ),
-        );
+        final parcel = state.extra as LandParcel?;
+        if (parcel == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Navigate')),
+            body: const Center(child: Text('No parcel selected.')),
+          );
+        }
+        return NavigationScreen(parcel: parcel);
       },
     ),
 
@@ -106,11 +104,7 @@ final appRouterProvider = GoRouter(
       name: 'validation',
       builder: (context, state) {
         final parcelId = state.pathParameters['parcelId'] ?? '';
-        return Scaffold(
-          body: Center(
-            child: Text('Validation: $parcelId'),
-          ),
-        );
+        return Scaffold(body: Center(child: Text('Validation: $parcelId')));
       },
     ),
 
@@ -121,9 +115,7 @@ final appRouterProvider = GoRouter(
       builder: (context, state) {
         // Will be replaced with actual PhotoCaptureScreen widget
         return const Scaffold(
-          body: Center(
-            child: Text('Photo Capture Screen'),
-          ),
+          body: Center(child: Text('Photo Capture Screen')),
         );
       },
     ),
@@ -134,11 +126,7 @@ final appRouterProvider = GoRouter(
       name: 'sync-queue',
       builder: (context, state) {
         // Will be replaced with actual SyncQueueScreen widget
-        return const Scaffold(
-          body: Center(
-            child: Text('Sync Queue Screen'),
-          ),
-        );
+        return const Scaffold(body: Center(child: Text('Sync Queue Screen')));
       },
     ),
 
@@ -148,11 +136,7 @@ final appRouterProvider = GoRouter(
       name: 'settings',
       builder: (context, state) {
         // Will be replaced with actual SettingsScreen widget
-        return const Scaffold(
-          body: Center(
-            child: Text('Settings Screen'),
-          ),
-        );
+        return const Scaffold(body: Center(child: Text('Settings Screen')));
       },
     ),
   ],

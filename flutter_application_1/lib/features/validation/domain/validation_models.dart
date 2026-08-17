@@ -1,6 +1,3 @@
-/// Simple validation models without Freezed
-/// TODO: Migrate back to Freezed once code generation works properly
-
 /// Validation DTO
 class ValidationDto {
   final String id;
@@ -47,22 +44,28 @@ class ValidationDto {
 class ValidationEntity {
   final String id;
   final String parcelId;
+  final String? tdNumber;
   final String status;
   final String? remarks;
   final double latitude;
   final double longitude;
   final DateTime createdAt;
+  final String syncStatus;
   final List<String> photoIds;
+  final List<String> photoPaths;
 
   ValidationEntity({
     required this.id,
     required this.parcelId,
+    this.tdNumber,
     required this.status,
     this.remarks,
     required this.latitude,
     required this.longitude,
     required this.createdAt,
+    this.syncStatus = 'pending',
     required this.photoIds,
+    this.photoPaths = const [],
   });
 
   factory ValidationEntity.fromDto(ValidationDto dto, List<String> photoIds) {
@@ -106,36 +109,47 @@ class PhotoEntity {
   });
 }
 
-/// Validation creation request
+/// Request to create a field validation for a land parcel.
+///
+/// `status` is a local-only bookkeeping field (not sent to the
+/// create-rpuland-validation API, which has no such parameter).
 class CreateValidationRequest {
-  final String parcelId;
+  final String parcelId; // land parcel id (API field: "id")
+  final String? tdNumber;
   final String status;
   final String? remarks;
   final double latitude;
   final double longitude;
+  final DateTime surveyDate;
 
   CreateValidationRequest({
     required this.parcelId,
+    this.tdNumber,
     required this.status,
     this.remarks,
     required this.latitude,
     required this.longitude,
+    required this.surveyDate,
   });
 
   Map<String, dynamic> toJson() => {
     'parcelId': parcelId,
+    'tdNumber': tdNumber,
     'status': status,
     'remarks': remarks,
     'latitude': latitude,
     'longitude': longitude,
+    'surveyDate': surveyDate.toIso8601String(),
   };
 
   factory CreateValidationRequest.fromJson(Map<String, dynamic> json) =>
       CreateValidationRequest(
         parcelId: json['parcelId'] as String,
+        tdNumber: json['tdNumber'] as String?,
         status: json['status'] as String,
         remarks: json['remarks'] as String?,
         latitude: (json['latitude'] as num).toDouble(),
         longitude: (json['longitude'] as num).toDouble(),
+        surveyDate: DateTime.parse(json['surveyDate'] as String),
       );
 }

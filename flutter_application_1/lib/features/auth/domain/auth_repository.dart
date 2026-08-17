@@ -1,21 +1,25 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../core/errors/failures.dart';
-import '../domain/auth_models.dart';
+import 'auth_models.dart';
 
 /// Repository contract for authentication operations
 abstract class AuthRepository {
   /// Attempt to login with credentials
-  Future<Either<Failure, LoginResponseDto>> login({
-    required String username,
+  Future<Either<Failure, UserEntity>> login({
+    required String emailAddress,
     required String password,
+    bool rememberMe = false,
   });
 
   /// Logout the current user
   Future<Either<Failure, void>> logout();
 
-  /// Refresh authentication token
-  Future<Either<Failure, String>> refreshToken();
+  /// Change the current user's password
+  Future<Either<Failure, void>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  });
 
   /// Get stored credentials
   Future<Either<Failure, UserEntity?>> getStoredUser();

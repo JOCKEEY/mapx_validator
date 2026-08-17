@@ -1,8 +1,8 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../core/errors/failures.dart';
-import '../domain/auth_models.dart';
-import '../domain/auth_repository.dart';
+import 'auth_models.dart';
+import 'auth_repository.dart';
 
 /// Use case for user login
 class LoginUseCase {
@@ -10,18 +10,21 @@ class LoginUseCase {
 
   LoginUseCase({required this.repository});
 
-  Future<Either<Failure, LoginResponseDto>> call({
-    required String username,
+  Future<Either<Failure, UserEntity>> call({
+    required String emailAddress,
     required String password,
+    bool rememberMe = false,
   }) async {
-    // Validate input
-    if (username.isEmpty || password.isEmpty) {
-      return Left(ValidationFailure.missingRequired('username or password'));
+    if (emailAddress.isEmpty || password.isEmpty) {
+      return Left(
+        ValidationFailure.missingRequired('email address or password'),
+      );
     }
 
     return await repository.login(
-      username: username,
+      emailAddress: emailAddress,
       password: password,
+      rememberMe: rememberMe,
     );
   }
 }
@@ -37,14 +40,38 @@ class LogoutUseCase {
   }
 }
 
-/// Use case for refreshing authentication token
-class RefreshTokenUseCase {
+/// Use case for changing the current user's password
+class ChangePasswordUseCase {
   final AuthRepository repository;
 
-  RefreshTokenUseCase({required this.repository});
+  ChangePasswordUseCase({required this.repository});
 
-  Future<Either<Failure, String>> call() async {
-    return await repository.refreshToken();
+  Future<Either<Failure, void>> call({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    if (oldPassword.isEmpty || newPassword.isEmpty) {
+      return Left(
+        ValidationFailure.missingRequired('current or new password'),
+      );
+    }
+    if (newPassword.length < 6) {
+      return Left(
+        ValidationFailure('New password must be at least 6 characters.'),
+      );
+    }
+    if (newPassword == oldPassword) {
+      return Left(
+        ValidationFailure(
+          'New password must be different from the current password.',
+        ),
+      );
+    }
+
+    return await repository.changePassword(
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+    );
   }
 }
 

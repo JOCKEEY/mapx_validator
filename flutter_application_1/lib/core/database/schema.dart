@@ -29,6 +29,7 @@ class Parcels extends Table {
 class Validations extends Table {
   TextColumn get id => text()();
   TextColumn get parcelId => text()();
+  TextColumn get tdNumber => text().nullable()();
   TextColumn get status => text()(); // valid, needs_update, not_found, duplicate, other
   TextColumn get remarks => text().nullable()();
   RealColumn get latitude => real()();
@@ -92,6 +93,22 @@ class SyncQueues extends Table {
           operation
         }, // Prevent duplicate sync operations
       ];
+}
+
+/// Land parcels selected in the field for later validation
+class RpuQueueItems extends Table {
+  TextColumn get id => text()(); // land parcel id from the API
+  TextColumn get pin => text()();
+  TextColumn get tdNumber => text().nullable()();
+  TextColumn get owner => text()();
+  TextColumn get municipality => text().nullable()();
+  TextColumn get barangay => text().nullable()();
+  TextColumn get landClass => text().nullable()();
+  TextColumn get payloadJson => text()(); // full search-result JSON
+  DateTimeColumn get addedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 /// User sessions table for storing user info and authentication
